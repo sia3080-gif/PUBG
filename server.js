@@ -90,11 +90,19 @@ const server = http.createServer((req, res) => {
   }
   if (url === '/healthz') { res.writeHead(200, cors); return res.end('ok'); }
   // 정적 파일 (public 폴더). / 는 index.html
-  let f = url === '/' ? '/index.html' : decodeURIComponent(url);
-  // public 폴더가 없으면 server.js 와 같은 폴더의 index.html 을 사용 (휴대폰에서 파일 3개만 올려도 되게)
-  const ROOT = fs.existsSync(path.join(PUBLIC, 'index.html')) ? PUBLIC : __dirname;
-  f = path.normalize(path.join(ROOT, f));
-  if (!f.startsWith(ROOT) || (ROOT === __dirname && path.basename(f) !== 'index.html')) { res.writeHead(404); return res.end(); }
+  // 게임 HTML 찾기: public/index.html -> ./index.html -> ./ 안의 아무 .html (파일 이름이 달라도 동작)
+  let GAME = null;
+  for (const c of [path.join(PUBLIC, 'index.html'), path.join(__dirname, 'index.html')]) if (fs.existsSync(c)) { GAME = c; break; }
+  if (!GAME) {
+    try {
+      const hs = fs.readdirSync(__dirname).filter(n => n.toLowerCase().endsWith('.html')).map(n => path.join(__dirname, n));
+      hs.sort((x, y) => fs.statSync(y).size - fs.statSync(x).size);
+      GAME = hs[0] || null;
+    } catch (e) { /* 무시 */ }
+  }
+  let f = url === '/' || url === '/index.html' ? GAME : null;
+  if (!f && fs.existsSync(path.join(PUBLIC, decodeURIComponent(url)))) f = path.normalize(path.join(PUBLIC, decodeURIComponent(url)));
+  if (!f || (f !== GAME && !f.startsWith(PUBLIC))) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end(GAME ? 'not found' : '게임 HTML 파일이 없어요. GitHub 저장소에 게임 .html 파일을 올려 주세요.'); }
   fs.stat(f, (err, st) => {
     if (err || !st.isFile()) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('게임 파일이 없어요. public/index.html 에 게임 HTML을 넣어 주세요.'); }
     const h = { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache', Vary: 'Accept-Encoding' };
