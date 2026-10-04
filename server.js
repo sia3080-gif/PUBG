@@ -191,7 +191,15 @@ function leaveParty(n) {
   if (p.leader === n) p.leader = p.members[0];
   pushParty(p);
 }
-const RELAY = new Set(['pos', 'shot', 'hit', 'bots', 'kill', 'dmg', 'dead', 'ev']); // 파티 안에서만 전달되는 게임 메시지
+function pushReq(n) { const u = DB.users[n]; if (!u) return; send(n, { t: 'freq', f: (u.rq || []).slice(), o: Object.keys(DB.users).filter(k => (DB.users[k].rq || []).includes(n)) }); }
+function acceptFriend(me, f) {
+  const a = DB.users[me], b = DB.users[f]; if (!a || !b) return;
+  a.rq = (a.rq || []).filter(x => x !== f); b.rq = (b.rq || []).filter(x => x !== me);
+  if (!a.fr.includes(f)) a.fr.push(f); if (!b.fr.includes(me)) b.fr.push(me);
+  save(); pushFriends(me); pushFriends(f); pushReq(me); pushReq(f);
+  msg(me, f + '님과 친구가 됐어요'); msg(f, me + '님이 친구 요청을 수락했어요');
+}
+const RELAY = new Set(['pos', 'shot', 'hit', 'bots', 'kill', 'dmg', 'dead', 'ev', 'ping']); // 파티 안에서만 전달되는 게임 메시지
 
 function handle(ws) {
   let me = null;
@@ -204,7 +212,7 @@ function handle(ws) {
       const old = online.get(u); if (old && old !== ws) { try { old.send(JSON.stringify({ t: 'bad' })); old.fin(); } catch (e) { /* 무시 */ } }
       me = u; online.set(u, ws); clearTimeout(grace.get(u)); grace.delete(u);
       send(u, { t: 'hello', u, stats: DB.users[u].st });
-      pushFriends(u); pushFriendsOfFriends(u);
+      pushFriends(u); pushFriendsOfFriends(u); pushReq(u);
       const p = partyOf.get(u); if (p) pushParty(p); else send(u, { t: 'party', leader: u, members: [{ n: u, on: 1 }] });
       return;
     }
@@ -224,11 +232,22 @@ function handle(ws) {
         const f = String(m.n || '');
         if (!DB.users[f]) return msg(me, '그런 아이디가 없어요');
         if (f === me) return msg(me, '나 자신은 추가할 수 없어요');
-        const a = DB.users[me], b = DB.users[f];
-        if (!a.fr.includes(f)) a.fr.push(f);
-        if (!b.fr.includes(me)) b.fr.push(me);   // 서로 친구로 바로 등록
-        save(); pushFriends(me); pushFriends(f); msg(me, f + '님과 친구가 됐어요'); msg(f, me + '님이 친구로 추가했어요');
+        const a = DB.users[me], b = DB.users[f]; a.rq = a.rq || []; b.rq = b.rq || [];
+        if (a.fr.includes(f)) return msg(me, '이미 친구예요');
+        if (a.rq.includes(f)) { acceptFriend(me, f); break; }   // 상대가 먼저 보낸 요청이 있으면 바로 친구
+        if (b.rq.includes(me)) return msg(me, '이미 친구 요청을 보냈어요');
+        b.rq.push(me); save(); pushReq(me); pushReq(f);
+        msg(me, f + '님에게 친구 요청을 보냈어요'); msg(f, me + '님이 친구 요청을 보냈어요');
         break;
+      }
+      case 'accf': {
+        const f = String(m.n || ''), a = DB.users[me];
+        if (!a || !DB.users[f] || !(a.rq || []).includes(f)) return pushReq(me);
+        acceptFriend(me, f); break;
+      }
+      case 'decf': {
+        const f = String(m.n || ''), a = DB.users[me]; if (!a) return;
+        a.rq = (a.rq || []).filter(x => x !== f); save(); pushReq(me); pushReq(f); break;
       }
       case 'invite': {
         const f = String(m.n || '');
