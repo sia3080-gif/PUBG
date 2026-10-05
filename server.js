@@ -199,7 +199,7 @@ function acceptFriend(me, f) {
   save(); pushFriends(me); pushFriends(f); pushReq(me); pushReq(f);
   msg(me, f + '님과 친구가 됐어요'); msg(f, me + '님이 친구 요청을 수락했어요');
 }
-const RELAY = new Set(['pos', 'shot', 'hit', 'bots', 'kill', 'dmg', 'dead', 'ev', 'ping']); // 파티 안에서만 전달되는 게임 메시지
+const RELAY = new Set(['pos', 'shot', 'hit', 'bots', 'kill', 'dmg', 'dead', 'ev', 'ping', 'rev']); // 파티 안에서만 전달되는 게임 메시지
 
 function handle(ws) {
   let me = null;
