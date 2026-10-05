@@ -199,6 +199,7 @@ function acceptFriend(me, f) {
   save(); pushFriends(me); pushFriends(f); pushReq(me); pushReq(f);
   msg(me, f + '님과 친구가 됐어요'); msg(f, me + '님이 친구 요청을 수락했어요');
 }
+const lastPing = new Map();
 const RELAY = new Set(['pos', 'shot', 'hit', 'bots', 'kill', 'dmg', 'dead', 'ev', 'ping', 'rev']); // 파티 안에서만 전달되는 게임 메시지
 
 function handle(ws) {
@@ -221,6 +222,11 @@ function handle(ws) {
     if (RELAY.has(m.t)) {                       // 게임 중 실시간 데이터: 같은 파티원에게만 전달
       if (!p) return;
       m.n = me;
+      if (m.t === 'ping') {                      // 핑: 좌표 검증 + 0.3초 도배 방지
+        const x = +m.x, z = +m.z, now = Date.now();
+        if (!isFinite(x) || !isFinite(z) || Math.abs(x) > 6000 || Math.abs(z) > 6000 || now - (lastPing.get(me) || 0) < 300) return;
+        lastPing.set(me, now); m = { t: 'ping', x: Math.round(x), z: Math.round(z), n: me };
+      }
       const out = JSON.stringify(m);
       if (m.to) { if (p.members.includes(m.to) && m.to !== me) { const c = online.get(m.to); if (c) c.send(out); } }
       else for (const x of p.members) if (x !== me) { const c = online.get(x); if (c) c.send(out); }
