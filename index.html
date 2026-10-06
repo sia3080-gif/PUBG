@@ -362,7 +362,7 @@ function aiOne(E,dt){if(!E.alive)return;const D=DF[dif];E.t-=dt;E.cd-=dt;
  E.mesh.position.set(E.p.x,E.p.y,E.p.z);E.mesh.rotation.y=E.yaw;animH(E.mesh,Math.hypot(E.v.x,E.v.z),dt,E.stn)}
 function sens(x,y,m=1){const s=.0022*SEN*m*((cw==2&&zoom)?1:cam.fov/80);P.yaw-=x*s;P.pit=Math.max(-1.5,Math.min(1.5,P.pit-y*s))}
 function upd(dt){try{specTick(dt)}catch(e){}if(MODE&&ph<3){dropUpd(dt);brTick(dt);tppUpd(dt);return}
- if(P.alive){const mx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+joy.x,mz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+joy.y,l=Math.hypot(mx,mz),n=l>1?1/l:1,s=(zoom?5.2:9.5)*[1,.55,.25][P.stn|0]*WS(P)*(P.dn?.35:1),c=Math.cos(P.yaw),sn=Math.sin(P.yaw);
+ if(P.alive){const mx=(keys.KeyD?1:0)-(keys.KeyA?1:0)+joy.x,mz=(keys.KeyS?1:0)-(keys.KeyW?1:0)+joy.y,l=Math.hypot(mx,mz),n=l>1?1/l:1,s=(zoom?5.2:9.5)*[1,.55,.25][P.stn|0]*WS(P)*(P.dn?.55:1),c=Math.cos(P.yaw),sn=Math.sin(P.yaw);
   const wx=(c*mx+sn*mz)*n*s,wz=(-sn*mx+c*mz)*n*s,ac=Math.min(1,dt*(P.g?12:3));P.v.x+=(wx-P.v.x)*ac;P.v.z+=(wz-P.v.z)*ac;
   if((keys.Space||jmp)&&!P.dn&&P.g&&WS(P)>.5){if(P.stn)setStance(0);else P.v.y=8}
   if(fire&&!P.dn&&cw!=2&&(W[cw].a||!latch)){shoot();latch=1}}
@@ -1006,7 +1006,7 @@ function dropUpd(dt){const jn=keys.Space||jmp,edge=jn&&!jl;jl=jn;
  cam.position.set(P.p.x,P.p.y+1.62,P.p.z);cam.rotation.set(P.pit,P.yaw,0);if(ph==0)cam.quaternion.copy(planeM.quaternion).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(P.pit,P.yaw,0,'YXZ')))}
 function brStart(){PRNG=PSEED?pmb32(PSEED):Math.random;PZRN=PSEED?pmb32(PSEED^0x2F6B1):Math.random;MODE=1;document.body.classList.add('br');buildWorld();DG.visible=false;BRO.forEach(o=>o.visible=true);GR=GB;bot.visible=false;E.alive=0;scene.fog.near=500;scene.fog.far=TOUCH?1700:2600;cam.far=TOUCH?2000:3000;cam.updateProjectionMatrix();
  for(const e of ENS)scene.remove(e.mesh);ENS=[];for(const l of LOOT)scene.remove(l.m);LOOT=[];for(const a of AD)scene.remove(a.m);AD=[];
- for(const q of LOOTQ)addLoot(q[0],q[1]);for(const h of HOUSES)for(let i=0;i<2;i++)addLoot(h.x+(R()-.5)*(h.w-2),h.z+(R()-.5)*(h.d-2));for(let i=0,n=0;i<500&&n<90;i++){const x=(R()-.5)*1.9*MAPH,z=(R()-.5)*1.9*MAPH;if(gh(x,z)>4){addLoot(x,z);n++}}
+ for(const q of LOOTQ)addLoot(q[0],q[1]);for(const h of HOUSES){for(let i=0;i<2;i++){const t=R()<.52?0:R()<.72?1:R()<.88?2:3;const v=R()*VAR[t].length|0;const px=h.x+(R()-.5)*Math.max(2,h.w*.62),pz=h.z+(R()-.5)*Math.max(2,h.d*.62);addLoot(px,pz,'w'+t,v);}}for(let i=0,n=0;i<500&&n<90;i++){const x=(R()-.5)*1.9*MAPH,z=(R()-.5)*1.9*MAPH;if(gh(x,z)>4){addLoot(x,z);n++}}
  P.dn=0;SPEC=0;SPT=null;dpt=0;P.car=null;bigOn=0;$('bigm').style.display='none';$('bmx').style.display='none';for(let i=0;i<BM;i++){const e=mkEn(0,0);e.fly=0;if(i<(window.ALLYN?ALLYN():0)){e.ally=1;e.nm='AI 동료 '+(i+1);try{allyTag(e)}catch(x){}}e.jt=1+R()*(MAPH*1.9/70);if(i<16)e.seat=[(i%2?1:-1)*2.0,-9+(i>>1)*2.6];ENS.push(e)}
  DEF.forEach((d,i)=>Object.assign(W[i],d));WSL[0]=WSL[1]=null;WCS=0;WLS=0;own=[0,0,0,0,0];res=[0,0,0,0,0];ammo=[0,0,0,0,0];cw=4;rl=0;kills=0;armr=0;alv=0;hlv=0;hlm=0;over=0;zoom=fire=0;M4V.cancel(1);setStance(0);
  Object.assign(P,{hp:100,alive:1,pit:-.15});P.v.set(0,0,0);const th2=R()*6.28;PL.d.set(Math.cos(th2),0,Math.sin(th2));PL.p.set(-PL.d.x*MAPH*1.05,700,-PL.d.z*MAPH*1.05);P.yaw=Math.atan2(-PL.d.x,-PL.d.z);P.p.set(PL.p.x,PL.p.y-3,PL.p.z);
